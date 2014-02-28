@@ -1,5 +1,5 @@
-Debug
-Release
-*.sdf
-*.opensdf
-*.suo
+[Tt]humbs.db
+*.DS_Store
+
+#Project files
+[Bb]uild/
