@@ -18,7 +18,6 @@
 
 namespace 
 {
-	extern float cube_vertices[216];
 	extern const char * update_pos_cs_source[];
 	extern const char * update_vel_cs_source[];
 	extern const char * cube_vs[];
@@ -209,6 +208,8 @@ int main(int argc, char *argv[])
 	glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, GL_TRUE);
 	glfwWindowHint(GLFW_SRGB_CAPABLE, GL_TRUE);
 
+
+	glfwSwapInterval(1.0);
 	glfwSetErrorCallback(glfw_callback);
 
 	window = glfwCreateWindow(1280, 720, "Hello World", NULL, NULL);
@@ -220,6 +221,8 @@ int main(int argc, char *argv[])
 	}
 
 	glfwMakeContextCurrent(window);
+
+	
 
 	glewExperimental = GL_TRUE;
 	if (glewInit() != GLEW_OK)
@@ -312,22 +315,20 @@ int main(int argc, char *argv[])
 		glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
 	}
 
-	GLuint cube_vao, cube_vbo;
+	GLuint cube_vao, cube_ibo;
 	{
-		glGenBuffers(1, &cube_vbo);
-		glBindBuffer(GL_ARRAY_BUFFER, cube_vbo);
-		glBufferData(GL_ARRAY_BUFFER, sizeof(cube_vertices), cube_vertices, GL_STATIC_DRAW);
-
-		// Create Vertex Array Object
+		// Create VAO
 		glGenVertexArrays(1, &cube_vao);
 		glBindVertexArray(cube_vao);
 
-		// Position
-		glEnableVertexAttribArray(0);
-		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), 0);
-		// Normal
-		glEnableVertexAttribArray(1);
-		glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3 * sizeof(float)));
+		glGenBuffers(1, &cube_ibo);
+		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, cube_ibo);
+
+		static const GLushort cube_inds[] = {
+			0, 2, 1, 3, 7, 2, 6, 0, 4, 1, 5, 7, 4, 6,
+		};
+		glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(cube_inds), cube_inds, GL_STATIC_DRAW);
+
 	}
 
 	glDisable(GL_BLEND);
@@ -440,20 +441,22 @@ int main(int argc, char *argv[])
 
 		glUseProgram(cube_draw_program);
 		glUniformMatrix4fv(cubePVLocation, 1, GL_FALSE, (const GLfloat*) &clip_from_world);
-		glDrawArraysInstanced(GL_TRIANGLES, 0, 36, kNumCubes);
+
+		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, cube_ibo);
+		glDrawElementsInstanced(GL_TRIANGLE_STRIP, 15, GL_UNSIGNED_SHORT, NULL, kNumCubes);
 
 		glfwSwapBuffers(window);
 		glfwPollEvents();
 
 		frame++;
 
-		//std::this_thread::sleep_for(std::chrono::milliseconds(int(16.0f)));
+		//std::this_thread::sleep_for(std::chrono::milliseconds(int(32)));
 	}
 
 	glDeleteProgram(cube_draw_program);
 	glDeleteProgram(update_pos_cs);
 
-	glDeleteBuffers(1, &cube_vbo);
+	glDeleteBuffers(1, &cube_ibo);
 	glDeleteBuffers(1, &constant_buffer);
 	glDeleteBuffers(1, &shader_data_buffer);
 	glDeleteBuffers(4, part_tex.data());
@@ -470,51 +473,6 @@ int main(int argc, char *argv[])
 
 namespace
 {
-float cube_vertices[216] = {
-	-0.5f, 0.5f, 0.5f, 0.0f, 0.0f, 1.0f,
-	0.5f, 0.5f, 0.5f, 0.0f, 0.0f, 1.0f,
-	0.5f, -0.5f, 0.5f, 0.0f, 0.0f, 1.0f,
-	0.5f, -0.5f, 0.5f, 0.0f, 0.0f, 1.0f,
-	-0.5f, -0.5f, 0.5f, 0.0f, 0.0f, 1.0f,
-	-0.5f, 0.5f, 0.5f, 0.0f, 0.0f, 1.0f,
-
-	-0.5f, 0.5f, -0.5f, -1.0f, 0.0f, 0.0f,
-	-0.5f, 0.5f, 0.5f, -1.0f, 0.0f, 0.0f,
-	-0.5f, -0.5f, 0.5f, -1.0f, 0.0f, 0.0f,
-	-0.5f, -0.5f, 0.5f, -1.0f, 0.0f, 0.0f,
-	-0.5f, -0.5f, -0.5f, -1.0f, 0.0f, 0.0f,
-	-0.5f, 0.5f, -0.5f, -1.0f, 0.0f, 0.0f,
-
-	0.5f, 0.5f, 0.5f, 1.0f, 0.0f, 0.0f,
-	0.5f, 0.5f, -0.5f, 1.0f, 0.0f, 0.0f,
-	0.5f, -0.5f, -0.5f, 1.0f, 0.0f, 0.0f,
-	0.5f, -0.5f, -0.5f, 1.0f, 0.0f, 0.0f,
-	0.5f, -0.5f, 0.5f, 1.0f, 0.0f, 0.0f,
-	0.5f, 0.5f, 0.5f, 1.0f, 0.0f, 0.0f,
-
-	-0.5f, 0.5f, 0.5f, 0.0f, 1.0f, 0.0f,
-	-0.5f, 0.5f, -0.5f, 0.0f, 1.0f, 0.0f,
-	0.5f, 0.5f, -0.5f, 0.0f, 1.0f, 0.0f,
-	0.5f, 0.5f, -0.5f, 0.0f, 1.0f, 0.0f,
-	0.5f, 0.5f, 0.5f, 0.0f, 1.0f, 0.0f,
-	-0.5f, 0.5f, 0.5f, 0.0f, 1.0f, 0.0f,
-
-	-0.5f, -0.5f, 0.5f, 0.0f, -1.0f, 0.0f,
-	0.5f, -0.5f, 0.5f, 0.0f, -1.0f, 0.0f,
-	0.5f, -0.5f, -0.5f, 0.0f, -1.0f, 0.0f,
-	0.5f, -0.5f, -0.5f, 0.0f, -1.0f, 0.0f,
-	-0.5f, -0.5f, -0.5f, 0.0f, -1.0f, 0.0f,
-	-0.5f, -0.5f, 0.5f, 0.0f, -1.0f, 0.0f,
-
-	-0.5f, 0.5f, -0.5f, 0.0f, 0.0f, -1.0f,
-	-0.5f, -0.5f, -0.5f, 0.0f, 0.0f, -1.0f,
-	0.5f, -0.5f, -0.5f, 0.0f, 0.0f, -1.0f,
-	0.5f, -0.5f, -0.5f, 0.0f, 0.0f, -1.0f,
-	0.5f, 0.5f, -0.5f, 0.0f, 0.0f, -1.0f,
-	-0.5f, 0.5f, -0.5f, 0.0f, 0.0f, -1.0f,
-};
-
-
 const char * update_pos_cs_source[] =
 {
 	"#version 430 core\n"
@@ -619,56 +577,49 @@ const char* cube_vs[] = {
 STRINGIZE(
 	#version 430 core\n
 
-	layout(location = 0) in vec3 position;
-	layout(location = 1) in vec3 normal;
-
-	out vec4 normal_world;
+	out vec3 world_pos;
 
 	uniform mat4 mvp;
 
 	layout(binding = 0, std430) buffer block0
 	{
 		vec4 older_position[];
-	}; \n
+	};\n
 
 	layout(binding = 1, std430) buffer block1
 	{
 		vec4 newer_position[];
-	}; \n
-
+	};\n
+		
 	void main() 
 	{
-		uint gid = gl_InstanceID;\n
+		uint gid = gl_InstanceID;
+		vec4 older_pos = older_position[gid];
+		vec4 newer_pos = newer_position[gid];
 
-		vec4 older_pos = older_position[gid]; \n
-		vec4 newer_pos = newer_position[gid]; \n
-
-		const vec3 world_down = vec3(0, 1, 0);
+		if (newer_pos.w == 0.0) 
+		{
+			gl_Position = vec4(0, 0, 0, 0);
+			world_pos = vec3(0, 0, 0);
+			return;
+		}
 
 		vec3 forward = vec3(newer_pos - older_pos);
-		vec3 translate_to = newer_pos.xyz;
+
+		const vec3 world_down = vec3(0, 1, 0);
 
 		vec3 X = normalize(forward);
 		vec3 Z = normalize(cross(X, world_down));
 		vec3 Y = cross(Z, X);
-		vec3 rotX = vec3(X.x, Y.x, Z.x);
-		vec3 rotY = vec3(X.y, Y.y, Z.y);
-		vec3 rotZ = vec3(X.z, Y.z, Z.z);
 
-		vec3 newPos = position;
-		newPos *= vec3(0.020, 0.0020, 0.0020);
+		float across_size = newer_pos.w;
 
-		vec3 oldNewPos = newPos;
-		newPos.x = dot(rotX, oldNewPos) + translate_to.x;
-		newPos.y = dot(rotY, oldNewPos) + translate_to.y;
-		newPos.z = dot(rotZ, oldNewPos) + translate_to.z;
+		world_pos = newer_pos.xyz;
+		world_pos += (((gl_VertexID & 1) != 0) ? across_size * 8 : -across_size * 8) * X;
+		world_pos += (((gl_VertexID & 2) != 0) ? across_size : -across_size) * Y;
+		world_pos += (((gl_VertexID & 4) != 0) ? across_size : -across_size) * Z;
 
-		gl_Position = mvp * vec4(newPos, 1.0);
-
-		normal_world.x = dot(rotX, normal);
-		normal_world.y = dot(rotY, normal);
-		normal_world.z = dot(rotZ, normal);
-		normal_world.w = 0.0;
+		gl_Position = mvp * vec4(world_pos, 1.0);
 	}
 )
 };
@@ -678,11 +629,18 @@ const char* cube_fs[] =
 STRINGIZE(
 	#version 430 core\n
 
-	in  vec4 normal_world;
+	in vec3 world_pos;
 	out vec4 outColor;
 
 	void main()
 	{
+		// determine triangle plane from derivatives
+		vec3 dPos_dx = dFdx(world_pos.xyz);
+		vec3 dPos_dy = dFdy(world_pos.xyz);
+
+		// world-space normal from tangents
+		vec3 normal_world = cross(dPos_dy, dPos_dx);
+
 		float NdotL = dot(normalize(normal_world.xyz), normalize(vec3(0.0, 0.7, 0.3)));
 		float clampNdotL = max(0.0, NdotL);
 
