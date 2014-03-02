@@ -222,6 +222,7 @@ int main(int argc, char *argv[])
 	glfwMakeContextCurrent(window);
 
 	glewExperimental = GL_TRUE;
+
 	if (glewInit() != GLEW_OK)
 	{
 		fprintf(stderr, "glfwInit failed\n");
@@ -303,14 +304,6 @@ int main(int argc, char *argv[])
 	}
 
 	GLuint force_tex = make_force_tex(32, 1.0f, 0.001f);
-
-	GLuint shader_data_buffer;
-	{
-		glGenBuffers(1, &shader_data_buffer);
-		glBindBuffer(GL_SHADER_STORAGE_BUFFER, shader_data_buffer);
-		glBufferData(GL_SHADER_STORAGE_BUFFER, kNumCubes * sizeof(glm::mat4), NULL, GL_DYNAMIC_COPY);
-		glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
-	}
 
 	GLuint cube_vao, cube_ibo;
 	{
