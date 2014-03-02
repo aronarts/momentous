@@ -222,8 +222,6 @@ int main(int argc, char *argv[])
 
 	glfwMakeContextCurrent(window);
 
-	
-
 	glewExperimental = GL_TRUE;
 	if (glewInit() != GLEW_OK)
 	{
@@ -356,11 +354,7 @@ int main(int argc, char *argv[])
 	while (!glfwWindowShouldClose(window))
 	{
 		using namespace glm;
-
-		static const float part_size = 0.001f;
-
-		static int updates = 0;
-
+				
 		vec3 emit_pos(0.0f);
 		emit_pos.x = 0.7f * sin(frame * 0.001f);
 
@@ -450,7 +444,7 @@ int main(int argc, char *argv[])
 
 		frame++;
 
-		//std::this_thread::sleep_for(std::chrono::milliseconds(int(32)));
+		//std::this_thread::sleep_for(std::chrono::milliseconds(32));
 	}
 
 	glDeleteProgram(cube_draw_program);
@@ -531,52 +525,17 @@ STRINGIZE(
 		// nuke particles if they get too far from the origin
 		if (dot(new_pos, new_pos) > 16.0)\n
 			o.w = 0.0;\n
+
 		pos_out[gid] = o;\n
 	}
 )
 };
 
-const char * update_vel_cs_source[] =
+const char* cube_vs[] = 
 {
+	"#version 430 core\n"
+
 STRINGIZE(
-	#version 430 core\n
-
-	layout (local_size_x = 256) in;\n
-
-	layout(binding = 1, std430) buffer block1
-	{
-		vec4 older_position[];
-	};
-
-	layout(binding = 2, std430) buffer block2
-	{
-		vec4 newer_position[];
-	};
-
-	layout(binding = 3, std430) buffer block3
-	{
-		vec4 vel_out[];
-	};
-
-	layout(std430, binding = 6) buffer block6
-	{
-		mat4 modelMat[];
-	};
-
-	void main(void)
-	{
-		uint gid = gl_GlobalInvocationID.x;
-		vec4 older_pos = older_position[gid];
-		vec4 newer_pos = newer_position[gid];
-		vel_out[gid] = newer_pos - older_pos;
-	}
-)
-};
-
-const char* cube_vs[] = {
-STRINGIZE(
-	#version 430 core\n
-
 	out vec3 world_pos;
 
 	uniform mat4 mvp;
@@ -608,14 +567,14 @@ STRINGIZE(
 
 		const vec3 world_down = vec3(0, 1, 0);
 
-		vec3 X = normalize(forward);
+		vec3 X = forward;
 		vec3 Z = normalize(cross(X, world_down));
-		vec3 Y = cross(Z, X);
+		vec3 Y = normalize(cross(Z, X));
 
 		float across_size = newer_pos.w;
 
 		world_pos = newer_pos.xyz;
-		world_pos += (((gl_VertexID & 1) != 0) ? across_size * 8 : -across_size * 8) * X;
+		world_pos += (((gl_VertexID & 1) != 0) ? 1.0 : -1.0) * X;
 		world_pos += (((gl_VertexID & 2) != 0) ? across_size : -across_size) * Y;
 		world_pos += (((gl_VertexID & 4) != 0) ? across_size : -across_size) * Z;
 
@@ -626,11 +585,13 @@ STRINGIZE(
 
 const char* cube_fs[] = 
 {
-STRINGIZE(
-	#version 430 core\n
+	"#version 430 core\n"
 
+STRINGIZE(
 	in vec3 world_pos;
 	out vec4 outColor;
+
+	const vec3 light_direction = normalize(vec3(0.0, 0.7, 0.3));
 
 	void main()
 	{
@@ -639,9 +600,9 @@ STRINGIZE(
 		vec3 dPos_dy = dFdy(world_pos.xyz);
 
 		// world-space normal from tangents
-		vec3 normal_world = cross(dPos_dy, dPos_dx);
+		vec3 normal_world = normalize(cross(dPos_dy, dPos_dx));
 
-		float NdotL = dot(normalize(normal_world.xyz), normalize(vec3(0.0, 0.7, 0.3)));
+		float NdotL = dot(normal_world.xyz, light_direction);
 		float clampNdotL = max(0.0, NdotL);
 
 		vec3 diffuse_lit = vec3(0.0144438436)
