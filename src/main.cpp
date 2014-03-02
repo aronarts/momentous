@@ -208,7 +208,6 @@ int main(int argc, char *argv[])
 	glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, GL_TRUE);
 	glfwWindowHint(GLFW_SRGB_CAPABLE, GL_TRUE);
 
-
 	glfwSwapInterval(1.0);
 	glfwSetErrorCallback(glfw_callback);
 
@@ -325,8 +324,8 @@ int main(int argc, char *argv[])
 		static const GLushort cube_inds[] = {
 			0, 2, 1, 3, 7, 2, 6, 0, 4, 1, 5, 7, 4, 6,
 		};
-		glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(cube_inds), cube_inds, GL_STATIC_DRAW);
 
+		glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(cube_inds), cube_inds, GL_STATIC_DRAW);
 	}
 
 	glDisable(GL_BLEND);
@@ -429,7 +428,6 @@ int main(int argc, char *argv[])
 
 		glBindBufferRange(GL_SHADER_STORAGE_BUFFER, 0, buffers[0], 0, kNumCubes * sizeof(glm::vec4)); // older pos
 		glBindBufferRange(GL_SHADER_STORAGE_BUFFER, 1, buffers[1], 0, kNumCubes * sizeof(glm::vec4)); // newer pos
-		glBindBufferRange(GL_SHADER_STORAGE_BUFFER, 6, shader_data_buffer, 0, kNumCubes * sizeof(glm::mat4));
 
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
@@ -452,7 +450,6 @@ int main(int argc, char *argv[])
 
 	glDeleteBuffers(1, &cube_ibo);
 	glDeleteBuffers(1, &constant_buffer);
-	glDeleteBuffers(1, &shader_data_buffer);
 	glDeleteBuffers(4, part_tex.data());
 
 	glDeleteTextures(1, &force_tex);
